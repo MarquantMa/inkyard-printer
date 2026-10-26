@@ -5,7 +5,7 @@
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)]()
 [![Hardware: Ricoh IM C3000--6000](https://img.shields.io/badge/Printer-Ricoh%20SNMP%2FLPR-red.svg)]()
 [![Impact: 50%+ Ink Saved](https://img.shields.io/badge/Toner%20Conservation-51.2%25-success.svg)]()
-[![Author: Haoran Ma](https://img.shields.io/badge/Author-Haoran%20Ma-orange.svg)](https://github.com/marquant)
+[![Author: Haoran Ma](https://img.shields.io/badge/Author-Haoran%20Ma-orange.svg)](https://github.com/MarquantMa)
 
 ---
 
@@ -68,7 +68,7 @@ inkyard-printer/
 
 ### Installation
 ```bash
-git clone https://github.com/marquant/inkyard-printer.git
+git clone https://github.com/MarquantMa/inkyard-printer.git
 cd inkyard-printer
 
 pip install -r requirements.txt
@@ -92,6 +92,6 @@ pytest tests/ -v
 ---
 
 ## 5. Author & License
-- **Author:** Haoran Ma (Marquant) ([GitHub @marquant](https://github.com/marquant))
+- **Author:** Haoran Ma (Marquant) ([GitHub @MarquantMa](https://github.com/MarquantMa))
 - **Email:** `marquant_voldemort@icloud.com`
 - **License:** MIT License
