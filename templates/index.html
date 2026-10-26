@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="InkYard">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>InkYard — Apple-Style Eco Print Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/apple_style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+  <script>
+    // Immediate theme preference initialization to avoid unstyled theme flash
+    (function() {
+      try {
+        var theme = localStorage.getItem("inkyard_theme") || localStorage.getItem("inksaver_theme") || "auto";
+        if (theme === "dark" || theme === "light") {
+          document.documentElement.setAttribute("data-theme", theme);
+        } else {
+          document.documentElement.setAttribute("data-theme", "auto");
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
+</head>
+<body>
+  <!-- Apple Top Navigation Bar -->
+  <header class="apple-nav">
+    <div class="nav-brand" id="brandLogo" role="button" tabindex="0" title="InkYard — Campus Eco Print Portal (Click 5x for Easter Egg)">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      <span>InkYard</span>
+    </div>
+    
+    <div class="nav-right">
+      <!-- Dark / Light Mode Manual Toggle Segment -->
+      <div class="theme-segmented-control" id="themeSwitcher" title="Switch Theme">
+        <button type="button" class="theme-segment-btn" data-theme="light" id="themeLightBtn" title="Light Mode">☀️</button>
+        <button type="button" class="theme-segment-btn" data-theme="dark" id="themeDarkBtn" title="Dark Mode">🌙</button>
+        <button type="button" class="theme-segment-btn active" data-theme="auto" id="themeAutoBtn" title="Follow System">⚙️</button>
+      </div>
+
+      <div class="status-pill" id="printerStatusPill" title="Network status of the school Canon printer">
+        <span class="status-dot" id="printerStatusDot"></span>
+        <span id="printerStatusText">Connecting to Canon...</span>
+      </div>
+      <button class="nav-btn" id="openConnectBtn" title="Scan QR Code or connect from iPad, Mac, Windows">📱 Connect iPad / QR</button>
+      <button class="nav-btn" id="openStatsBtn">Impact Stats</button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <section class="hero">
+      <h1 class="hero-title">Print smarter. Save ink.</h1>
+      <p class="hero-subtitle">
+        Zero driver installations. Drop your PDF, Pages, or Office file, cut toner usage by up to 75%, and pick up your print at the Canon hold queue.
+      </p>
+      
+      <!-- Network Access Pill -->
+      <div class="network-badge" id="networkBadge" title="Tap to copy link for iPad or another laptop">
+        <span class="badge-icon">🌐</span>
+        <span>Classroom Portal:</span>
+        <strong id="heroPortalUrl">http://{{ local_ip }}:{{ port }}</strong>
+        <span class="badge-action">Copy Link</span>
+      </div>
+    </section>
+
+    <div class="portal-grid">
+      <!-- Left Sidebar: Apple-Style Visual Page Selection Gallery -->
+      <aside class="col-sidebar" id="pageSidebar">
+        <div class="apple-card sidebar-card">
+          <div class="sidebar-header">
+            <div class="sidebar-title-row">
+              <h3 class="sidebar-title">Pages</h3>
+              <span class="sidebar-count" id="sidebarPageCount">0 pages</span>
+            </div>
+            <div class="sidebar-actions">
+              <button type="button" class="sidebar-action-btn" id="selectAllPagesBtn">Select All</button>
+              <span class="sidebar-action-sep">•</span>
+              <button type="button" class="sidebar-action-btn" id="deselectAllPagesBtn">Deselect All</button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="sidebar-empty" id="sidebarEmptyState">
+            <div class="sidebar-empty-icon">📑</div>
+            <p>Upload a file to visually view and toggle pages in Apple print style</p>
+          </div>
+
+          <!-- Vertical Scrollable Gallery of Page Thumbnails -->
+          <div class="page-thumbnail-gallery" id="pageThumbnailGallery" style="display: none;">
+            <!-- Dynamically populated page cards with floating pill badges -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Column: File Drop & Queue, Mode Selection, and Live Preview -->
+      <div class="col-left">
+        <!-- Card 1: Upload Zone & Document Queue -->
+        <div class="apple-card">
+          <div class="card-header">
+            <h2 class="card-title">1. Document</h2>
+            <span class="badge-subtle" id="queueBadge" style="display: none;">1 file ready</span>
+          </div>
+          
+          <!-- Apple Minimalist Upload Drop Zone -->
+          <div class="drop-zone-apple" id="dropZone">
+            <div class="drop-icon-container">
+              <svg class="drop-icon-sf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="12" x2="12" y2="18"></line>
+                <polyline points="9 15 12 12 15 15"></polyline>
+              </svg>
+            </div>
+            <div class="drop-text-primary">
+              Drop your files here, or <span class="browse-link">browse</span>
+            </div>
+            <div class="drop-text-secondary">
+              Batch upload supported: drag multiple PDFs, Pages, Word, PPTX or images
+            </div>
+            <div class="drop-format-pills">
+              <span class="format-pill">PDF</span>
+              <span class="format-pill">Pages</span>
+              <span class="format-pill">Word (DOCX)</span>
+              <span class="format-pill">PowerPoint</span>
+              <span class="format-pill">Images</span>
+            </div>
+            <input type="file" id="fileInput" class="hidden-input" multiple accept=".pdf,.pages,.docx,.doc,.pptx,.ppt,.png,.jpg,.jpeg,.webp,.txt">
+          </div>
+
+          <!-- Document Queue List (Multi-File Manager) -->
+          <div class="doc-queue-section" id="docQueueSection" style="display: none;">
+            <div class="queue-header-row">
+              <span class="queue-title">Uploaded Documents Queue</span>
+              <button type="button" class="add-more-files-btn" id="addMoreFilesBtn">+ Add Files</button>
+            </div>
+            <div class="doc-queue-list" id="docQueueList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Active Document Pill (Hidden fallback for legacy element bindings) -->
+          <div class="doc-pill" id="docPill" style="display: none !important;">
+            <div class="doc-meta">
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <div>
+                <div class="doc-name" id="docName">Document.pdf</div>
+                <div class="doc-details" id="docDetails">Analyzing...</div>
+              </div>
+            </div>
+            <button class="nav-btn" id="removeDocBtn" style="color: #ff3b30;">Remove</button>
+          </div>
+        </div>
+
+        <!-- Card 2: Interactive Before / After Preview (Pixel-Aligned Split Slider) -->
+        <div class="apple-card preview-container" id="previewContainer">
+          <div class="card-header">
+            <h2 class="card-title">2. Live Print Preview</h2>
+            <span class="mode-badge" id="inkSavedBadge">25% Ink Spared</span>
+          </div>
+
+          <div class="preview-box" id="previewBox" style="--split-pos: 50%;">
+            <!-- Processed image on base layer -->
+            <img id="procImg" class="preview-img proc-layer" alt="Ink Saved Page">
+            
+            <!-- Original image on clipped top layer with matching aspect ratio -->
+            <img id="origImg" class="preview-img orig-layer" alt="Original Page">
+
+            <!-- Split slider divider line & drag knob -->
+            <div class="split-divider" id="splitDivider">
+              <div class="split-handle">
+                <span>‹</span><span>›</span>
+              </div>
+            </div>
+
+            <!-- Drag slider control -->
+            <input type="range" min="0" max="100" value="50" class="split-slider" id="splitSlider" title="Slide to compare Original vs Ink-Saved">
+
+            <div class="preview-badges">
+              <span class="preview-pill left-badge">Original (Left)</span>
+              <span class="preview-pill right-badge">Ink-Saved (Right)</span>
+            </div>
+          </div>
+
+          <div class="page-stepper">
+            <button class="stepper-btn" id="prevPageBtn" title="Previous Page">‹</button>
+            <span class="stepper-label" id="pageStepperLabel">Page 1 of 1</span>
+            <button class="stepper-btn" id="nextPageBtn" title="Next Page">›</button>
+          </div>
+        </div>
+
+        <!-- Card 3: Ink-Saving Mode Selector -->
+        <div class="apple-card">
+          <div class="card-header">
+            <h2 class="card-title">3. Ink-Saving Mode</h2>
+          </div>
+          
+          <div class="mode-selector">
+            <div class="mode-card active" data-mode="eco">
+              <div class="mode-card-title">Eco Mode</div>
+              <span class="mode-badge">25% Saved</span>
+              <p class="mode-desc">Laser monochrome printout. Crisp, dark text with ~25% toner savings.</p>
+            </div>
+
+            <div class="mode-card" data-mode="matrix">
+              <div class="mode-card-title">Matrix Mode</div>
+              <span class="mode-badge">50% Saved</span>
+              <p class="mode-desc">Bayer dot-matrix halftone. Clean newspaper style.</p>
+            </div>
+
+
+            <div class="mode-card" data-mode="slide_clean">
+              <div class="mode-card-title">Slide Whitening</div>
+              <span class="mode-badge">60% Saved</span>
+              <p class="mode-desc">Removes dark PPT backgrounds, inverts light text.</p>
+            </div>
+
+            <div class="mode-card" data-mode="line_art">
+              <div class="mode-card-title">Line Art</div>
+              <span class="mode-badge">75% Saved</span>
+              <p class="mode-desc">Canny edge outlines on pure white. Max toner savings.</p>
+            </div>
+
+            <div class="mode-card" data-mode="normal">
+              <div class="mode-card-title">Normal</div>
+              <span class="mode-badge eco-zero">0% Saved</span>
+              <p class="mode-desc">Original untouched document without ink reduction.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Student Details, Controls, Propaganda Ticker, Actions & Ads -->
+      <div class="col-right">
+        <!-- Print Details Card -->
+        <div class="apple-card">
+          <div class="card-header">
+            <h2 class="card-title">Print Details</h2>
+          </div>
+
+          <!-- Student Name (Shown on Canon Screen) -->
+          <div class="form-group">
+            <label class="form-label" for="studentName">Student Name (Shows on Printer Screen)</label>
+            <input type="text" id="studentName" class="apple-input" placeholder="e.g. Alex Marquant" autocomplete="name">
+          </div>
+
+          <!-- Document Title -->
+          <div class="form-group">
+            <label class="form-label" for="jobName">Document Title</label>
+            <input type="text" id="jobName" class="apple-input" placeholder="e.g. History_Essay.pdf">
+          </div>
+
+          <!-- Duplex Card (Defaulted ON) -->
+          <div class="duplex-toggle-card">
+            <div class="duplex-text">
+              <h4>Double-Sided (Duplex)</h4>
+              <p>🌱 Default: Halves paper usage</p>
+            </div>
+            <label class="apple-switch" title="Toggle Double-Sided">
+              <input type="checkbox" id="duplexToggle" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <!-- Page Range & Copies Grid -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label class="form-label" for="pageRange">Pages</label>
+              <input type="text" id="pageRange" class="apple-input" placeholder="all or 1-5" value="all">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="copiesInput">Copies</label>
+              <input type="number" id="copiesInput" class="apple-input" min="1" max="20" value="1">
+            </div>
+          </div>
+
+          <!-- Printer Target IP -->
+          <div class="form-group" style="margin-top: 4px;">
+            <label class="form-label" for="printerIp">Printer IP</label>
+            <input type="text" id="printerIp" class="apple-input" value="172.16.4.9" style="font-family: monospace; font-size: 13px;">
+          </div>
+        </div>
+
+        <!-- Collapsible Advanced Settings Accordion (复杂设置可折叠卡片) -->
+        <div class="apple-card collapsible-card" id="advancedSettingsCard">
+          <div class="collapsible-header" id="advancedSettingsToggle">
+            <div class="collapsible-title-wrap">
+              <span class="collapsible-icon">⚙️</span>
+              <div>
+                <h3 class="collapsible-title">Advanced Settings / 高级设置</h3>
+                <p class="collapsible-summary" id="advancedSummary">Long edge • Collate • 1-Up</p>
+              </div>
+            </div>
+            <div class="chevron-circle">
+              <svg class="chevron-svg" id="advancedChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="collapsible-body" id="advancedSettingsBody">
+            <!-- 1. Binding Edge (长短边反转) -->
+            <div class="setting-item">
+              <label class="form-label">Binding Edge (长短边翻转)</label>
+              <div class="segmented-control" id="bindingEdgeControl">
+                <button type="button" class="segment-btn active" data-binding="long">
+                  <span class="seg-main">Long Edge</span>
+                  <span class="seg-sub">长边翻转</span>
+                </button>
+                <button type="button" class="segment-btn" data-binding="short">
+                  <span class="seg-main">Short Edge</span>
+                  <span class="seg-sub">短边翻转</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Inverse Color (反色 / 负片模式) -->
+            <div class="setting-toggle-row">
+              <div class="setting-info">
+                <span class="setting-title">Inverse Color (颜色反转 / 负片)</span>
+                <span class="setting-desc">Invert dark backgrounds to pure white. Cuts toner on lecture slides and blackboard PDFs. Light documents automatically protected.</span>
+              </div>
+              <label class="apple-switch" title="Toggle Color Inversion">
+                <input type="checkbox" id="invertColorToggle" autocomplete="off">
+                <span class="slider-round"></span>
+              </label>
+            </div>
+
+            <!-- 3. Collate vs Group (长文件组份打印还是多张打印) -->
+            <div class="setting-item">
+              <label class="form-label">Multi-Copy Sorting (逐份/分组打印)</label>
+              <div class="segmented-control" id="collateControl">
+                <button type="button" class="segment-btn active" data-collate="true">
+                  <span class="seg-main">Collate (逐份)</span>
+                  <span class="seg-sub">1-2-3, 1-2-3</span>
+                </button>
+                <button type="button" class="segment-btn" data-collate="false">
+                  <span class="seg-main">Group (分组)</span>
+                  <span class="seg-sub">1-1, 2-2, 3-3</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. N-Up Multiple Pages per Sheet (多页拼版) -->
+            <div class="setting-item">
+              <label class="form-label">Pages per Sheet (多页拼版)</label>
+              <div class="segmented-control" id="nupControl">
+                <button type="button" class="segment-btn active" data-nup="1">
+                  <span class="seg-main">1-Up</span>
+                  <span class="seg-sub">Standard</span>
+                </button>
+                <button type="button" class="segment-btn" data-nup="2">
+                  <span class="seg-main">2-Up</span>
+                  <span class="seg-sub">Halves Paper</span>
+                </button>
+                <button type="button" class="segment-btn" data-nup="4">
+                  <span class="seg-main">4-Up</span>
+                  <span class="seg-sub">Quarter Paper</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Propaganda Eco-Ticker Card -->
+        <div class="eco-ticker-card">
+          <div class="ticker-header">
+            <span>🌱</span>
+            <span>Sustainability Impact</span>
+          </div>
+          
+          <div class="ticker-metrics">
+            <div class="metric-item">
+              <div class="metric-num" id="metricInk">~0.15 mL</div>
+              <div class="metric-label">Ink Spared</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-num" id="metricSheets">0 sheets</div>
+              <div class="metric-label">Paper Saved</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-num" id="metricTrees">0.0000</div>
+              <div class="metric-label">Trees Saved</div>
+            </div>
+          </div>
+
+          <div class="propaganda-text" id="propagandaQuote">
+            "Switching to Matrix Mode saves ink. If our entire school printed like you this semester, we'd save trees and toner for future students!"
+          </div>
+        </div>
+
+        <!-- Primary & Secondary Actions -->
+        <button class="btn-primary-apple" id="printBtn" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Send to Canon Printer
+        </button>
+
+        <button class="btn-primary-apple btn-batch-apple" id="batchPrintBtn" style="display: none; background: #34c759; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); margin-top: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          Print All Queued Documents (<span id="batchCountBadge">0</span>)
+        </button>
+
+        <button class="btn-secondary-apple" id="downloadBtn" disabled style="margin-top: 10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download Processed PDF
+        </button>
+
+        <!-- Student Community Board (Ad Slot) -->
+        <div class="ad-card" id="adCard">
+          <div class="ad-card-top">
+            <span class="ad-badge" id="adBadge">Student Club</span>
+            <div class="ad-controls">
+              <button class="ad-arrow-btn" id="prevAdBtn" title="Previous announcement">‹</button>
+              <button class="ad-arrow-btn" id="nextAdBtn" title="Next announcement">›</button>
+            </div>
+          </div>
+          <h3 class="ad-title" id="adTitle">Robotics & Drone Expo</h3>
+          <p class="ad-tagline" id="adTagline">Friday @ Engineering Lab 204</p>
+          <p class="ad-desc" id="adDesc">Autonomous flight demos & free donuts. Sponsored by campus eco-printing initiative!</p>
+          <div class="ad-contact" id="adContact">Contact: @school_robotics</div>
+          <button class="ad-post-btn" id="openAdModalBtn">+ Post Club Announcement / Buy Coffee</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Connect Device / QR Code Modal -->
+  <div class="modal-backdrop" id="connectModal">
+    <div class="modal-box connect-modal-box">
+      <div class="modal-header-row">
+        <h2 class="modal-title">
+          <span class="modal-title-screen">📱 Connect Device</span>
+          <span class="modal-title-print">🌱 InkYard — Classroom Eco Print</span>
+        </h2>
+        <span class="modal-badge-lan">School Wi-Fi</span>
+      </div>
+      <p class="modal-body">
+        <strong>Direct URL or QR Code (both work identically):</strong> Open Safari, Chrome, or Edge on any device connected to the school Wi-Fi. Either scan the QR code with your camera or directly type the URL into your browser address bar:
+      </p>
+
+      <div class="qr-wrapper">
+        <div id="qrCanvasContainer" class="qr-canvas-box"></div>
+      </div>
+
+      <div class="connect-url-box">
+        <span class="connect-url-label">Portal URL (Type directly in browser)</span>
+        <div class="connect-url-row">
+          <input type="text" id="connectModalUrl" class="apple-input-mono" readonly value="http://{{ local_ip }}:{{ port }}">
+          <button class="nav-btn" id="copyUrlBtn">Copy</button>
+        </div>
+      </div>
+
+      <div class="device-tips">
+        <div class="device-tip-item">
+          <strong>Direct Browser Entry (No Scanning Needed):</strong> Simply type <code>http://{{ local_ip }}:{{ port }}</code> in any browser (Safari, Chrome, Edge) to access the portal immediately.
+        </div>
+        <div class="device-tip-item">
+          <strong>iPad / iPhone:</strong> Scan QR with Camera > Open in Safari > Tap Share > <em>Add to Home Screen</em> for zero-install app!
+        </div>
+        <div class="device-tip-item">
+          <strong>Windows / Mac:</strong> Open URL directly in Chrome/Edge. Zero driver installation needed.
+        </div>
+      </div>
+
+
+      <div class="modal-actions-row">
+        <button class="btn-secondary-apple" id="printPosterBtn">
+          🖨️ Print QR Poster for Canon
+        </button>
+        <button class="btn-primary-apple" id="closeConnectModalBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Announcement / Ad Modal -->
+  <div class="modal-backdrop" id="adModal">
+    <div class="modal-box">
+      <h2 class="modal-title">Campus Community Board</h2>
+      <p class="modal-body">Promote your student club, project, or event to everyone using InkYard.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="newAdTitle">Event / Project Title *</label>
+        <input type="text" id="newAdTitle" class="apple-input" placeholder="e.g. AI & Robotics Hackathon">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="newAdTagline">Short Tagline</label>
+        <input type="text" id="newAdTagline" class="apple-input" placeholder="e.g. Build cool projects this Saturday">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="newAdDesc">Description</label>
+        <textarea id="newAdDesc" class="apple-input" rows="3" placeholder="Brief event details, location, time, free food, etc."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="newAdContact">Contact Info / Social Handle</label>
+        <input type="text" id="newAdContact" class="apple-input" placeholder="e.g. @robotics_club or club@campus.edu">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="newAdBadge">Category Tag</label>
+        <select id="newAdBadge" class="apple-input">
+          <option value="Student Club">Student Club</option>
+          <option value="Academic">Academic Hub</option>
+          <option value="Sports & Arts">Sports & Arts</option>
+          <option value="Fundraiser">Eco Fundraiser / Coffee</option>
+        </select>
+      </div>
+
+      <div class="modal-actions-row">
+        <button class="btn-secondary-apple" id="closeAdModalBtn">Cancel</button>
+        <button class="btn-primary-apple" id="submitAdBtn">Publish Notice</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success / Hold Queue Modal -->
+  <div class="modal-backdrop" id="successModal">
+    <div class="modal-box">
+      <svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <h2 class="modal-title">Sent to Canon Hold Queue!</h2>
+      <p class="modal-body">
+        Your ink-saved document has been securely dispatched to the printer at <strong id="modalPrinterIp">172.16.4.9</strong>.
+      </p>
+
+      <div class="hold-instructions">
+        <strong>How to release your print:</strong>
+        <ol>
+          <li>Walk over to the physical Canon printer.</li>
+          <li>Look at the touchscreen hold queue list.</li>
+          <li>Find your name: <strong id="modalStudentName" style="color: #0071e3;">Alex</strong></li>
+          <li>Confirm document: <span id="modalJobName" style="font-weight: 500;">Doc</span></li>
+          <li>Tap <strong>Start Printing</strong>!</li>
+        </ol>
+      </div>
+
+      <div style="font-size: 13px; color: #34c759; font-weight: 600; margin-bottom: 20px;">
+        Ink Spared: <span id="modalInkSaved">50%</span>
+      </div>
+
+      <button class="btn-primary-apple" id="closeModalBtn">Done</button>
+    </div>
+  </div>
+
+  <!-- Impact Statistics Modal -->
+  <div class="modal-backdrop" id="statsModal">
+    <div class="modal-box">
+      <h2 class="modal-title">Campus Eco-Impact</h2>
+      <p class="modal-body">Telemetry from <code>logs/print_log.csv</code> across all students.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <div class="metric-item">
+          <div class="metric-num" id="statTotalJobs">0</div>
+          <div class="metric-label">Total Jobs</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-num" id="statTotalPages">0</div>
+          <div class="metric-label">Pages Printed</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-num" id="statSheetsSaved" style="color: #34c759;">0</div>
+          <div class="metric-label">Sheets Saved</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-num" id="statInkSaved" style="color: #34c759;">0 mL</div>
+          <div class="metric-label">Ink Spared</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-num" id="statTreesSaved" style="color: #0071e3;">0.00</div>
+          <div class="metric-label">Trees Preserved</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-num" id="statDuplexRate" style="color: #0071e3;">100%</div>
+          <div class="metric-label">Duplex Adoption</div>
+        </div>
+      </div>
+
+      <button class="btn-secondary-apple" id="closeStatsBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Easter Egg Modal: Marquant Vahram Signature -->
+  <div class="modal-backdrop" id="easterEggModal">
+    <div class="modal-box easter-egg-box">
+      <div class="easter-egg-sparkles" aria-hidden="true">
+        <span>✨</span><span>🌟</span><span>✨</span>
+      </div>
+      <div class="easter-signature-card">
+        <img src="{{ url_for('static', filename='images/signature.png') }}" alt="Signature of Marquant Vahram" class="easter-signature-img">
+      </div>
+      <h2 class="easter-egg-title">InkYard</h2>
+      <p class="easter-egg-caption">Crafted with passion by <strong>Marquant Vahram</strong></p>
+      <p class="easter-egg-sub">Designed for effortless, sustainable campus printing.</p>
+      <button class="btn-primary-apple" id="closeEasterEggBtn" style="margin-top: 18px; width: 100%;">Done</button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-notice" id="toast"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

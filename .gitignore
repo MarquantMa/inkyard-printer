@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.DS_Store
+spool/*
+!spool/.gitkeep
+*.zip
+*.pdf
+logs/print_log.csv.bak
+env/
+venv/
+.venv/
