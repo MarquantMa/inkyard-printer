@@ -81,7 +81,7 @@ class TestPrinterDispatcher(unittest.TestCase):
     def test_binding_edge_and_collate_options(self):
         with open(self.test_pdf, "rb") as f:
             pdf_bytes = f.read()
-            
+
         # 1. Short edge binding + uncollated
         pjl_short = build_pjl_payload(pdf_bytes, "Sam", "Notes.pdf", duplex=True, copies=2, binding="short", collate=False)
         self.assertIn(b"@PJL SET BINDING = SHORTEDGE", pjl_short)

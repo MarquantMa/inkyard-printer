@@ -86,12 +86,12 @@ class TestInkSaver(unittest.TestCase):
         img = np.full((300, 500, 3), 255, dtype=np.uint8)
         cv2.putText(img, "Testing True Ink Reduction", (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
         cv2.rectangle(img, (30, 120), (300, 240), (0,0,0), -1)
-        
+
         d_orig = calculate_ink_density(img)
         mat = apply_matrix_mode(img)
         d_mat = calculate_ink_density(mat)
         saving_pct = (1.0 - d_mat / d_orig) * 100.0
-        
+
         # Must actually deliver ~50% savings (+/- 5%) on black fills and text
         self.assertGreaterEqual(saving_pct, 45.0)
         self.assertLessEqual(saving_pct, 55.0)
@@ -100,12 +100,12 @@ class TestInkSaver(unittest.TestCase):
         img = np.full((300, 500, 3), 255, dtype=np.uint8)
         cv2.putText(img, "Eco Mode Real Savings", (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,0), 2)
         cv2.rectangle(img, (30, 120), (300, 240), (0,0,0), -1)
-        
+
         d_orig = calculate_ink_density(img)
         eco = apply_eco_mode(img)
         d_eco = calculate_ink_density(eco)
         saving_pct = (1.0 - d_eco / d_orig) * 100.0
-        
+
         # Must deliver ~25% savings (+/- 5%)
         self.assertGreaterEqual(saving_pct, 20.0)
         self.assertLessEqual(saving_pct, 32.0)
@@ -118,7 +118,7 @@ class TestInkSaver(unittest.TestCase):
         cleaned = apply_slide_clean_mode(slide)
         d_clean = calculate_ink_density(cleaned)
         saving_pct = (1.0 - d_clean / d_orig) * 100.0
-        
+
         # Slide cleaning must eliminate dark background, saving >60% ink
         self.assertGreater(saving_pct, 60.0)
 
@@ -148,11 +148,11 @@ class TestInkSaver(unittest.TestCase):
         # Document with solid black text
         img = np.full((200, 400, 3), 255, dtype=np.uint8)
         cv2.putText(img, "Sharp Black Text", (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0), 2)
-        
+
         # Locate dark text center pixels in original
         text_pixels = np.where(img[:,:,0] == 0)
         self.assertGreater(len(text_pixels[0]), 0)
-        
+
         eco = apply_eco_mode(img)
         # In eco mode, text should stay pure dark (not washed out)
         min_text_val = int(np.min(eco[text_pixels]))
@@ -164,10 +164,10 @@ class TestInkSaver(unittest.TestCase):
         # Bold heading with thick strokes (stroke thickness > 4px)
         img = np.full((120, 500, 3), 255, dtype=np.uint8)
         cv2.putText(img, "Chapter 1: Overview", (20, 80), cv2.FONT_HERSHEY_DUPLEX, 1.8, (0, 0, 0), 5)
-        
+
         dark_pixels = np.where(img[:, :, 0] == 0)
         self.assertGreater(len(dark_pixels[0]), 0)
-        
+
         eco = apply_eco_mode(img)
         # All dark pixels of the bold heading must be preserved as true dark black (0)
         heading_vals = eco[:, :, 0][dark_pixels]
@@ -201,7 +201,7 @@ class TestInkSaver(unittest.TestCase):
             font = ImageFont.load_default()
         draw.text((20, 30), "打印机省墨", fill=(0, 0, 0), font=font)
         arr = np.array(im)[:, :, ::-1]
-        
+
         eco = apply_eco_mode(arr)
         dark = (arr[:, :, 0] == 0)
         if np.sum(dark) > 0:
@@ -366,7 +366,7 @@ class TestInkSaver(unittest.TestCase):
         page[:60, :] = 0 # Top black banner
         cv2.putText(page, "Student Report Header", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
         cv2.putText(page, "Main document body text", (30, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2)
-        
+
         inv = apply_smart_inversion(page)
         # Body white paper (row 400, col 300) MUST NOT be inverted to black [0, 0, 0]!
         self.assertEqual(inv[400, 300].tolist(), [255, 255, 255])

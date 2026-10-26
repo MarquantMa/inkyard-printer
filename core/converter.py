@@ -158,7 +158,7 @@ def convert_pages_to_pdf(input_path: str, output_path: str) -> bool:
         try:
             with zipfile.ZipFile(input_path, 'r') as zf:
                 namelist = zf.namelist()
-                
+
                 # Check for multi-page QuickLook attachments inside the zip
                 pdf_files = [n for n in namelist if n.lower().endswith(".pdf")]
                 if len(pdf_files) > 1 or any("quicklook/" in n.lower() and n.lower().endswith((".pdf", ".html", ".plist")) for n in namelist):
@@ -182,7 +182,7 @@ def convert_pages_to_pdf(input_path: str, output_path: str) -> bool:
                         with open(output_path, "wb") as f_out:
                             f_out.write(zf.read(candidate))
                         return True
-                        
+
                 if len(pdf_files) == 1:
                     with open(output_path, "wb") as f_out:
                         f_out.write(zf.read(pdf_files[0]))
@@ -339,7 +339,7 @@ def convert_docx_fallback(input_path: str, output_path: str) -> bool:
         bottomMargin=40
     )
     styles = getSampleStyleSheet()
-    
+
     body_style = ParagraphStyle(
         'DocxBody',
         parent=styles['Normal'],
@@ -510,13 +510,13 @@ def convert_pptx_fallback(input_path: str, output_path: str) -> bool:
 
     from reportlab.platypus import PageBreak
     story = []
-    
+
     for i, slide in enumerate(prs.slides):
         if i > 0:
             story.append(PageBreak())
         story.append(Paragraph(f"Slide {i+1}", ParagraphStyle('SlideNum', fontName=font_name, fontSize=9, textColor=colors.gray)))
         story.append(Spacer(1, 8))
-        
+
         for shape in slide.shapes:
             if shape.has_text_frame:
                 for paragraph in shape.text_frame.paragraphs:
@@ -525,10 +525,10 @@ def convert_pptx_fallback(input_path: str, output_path: str) -> bool:
                         clean_txt = txt.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                         story.append(Paragraph(clean_txt, body_style))
                         story.append(Spacer(1, 4))
-                        
+
     if not story:
         story.append(Paragraph("Empty Presentation", body_style))
-        
+
     pdf.build(story)
     return os.path.exists(output_path) and os.path.getsize(output_path) > 0
 
@@ -546,7 +546,7 @@ def convert_image_to_pdf(input_path: str, output_path: str) -> bool:
     """
     try:
         from PIL import ImageOps, ImageSequence
-        
+
         frames = []
         with Image.open(input_path) as raw_img:
             for frame in ImageSequence.Iterator(raw_img):
@@ -622,7 +622,7 @@ def convert_text_to_pdf(input_path: str, output_path: str) -> bool:
     """Convert .txt or .md files to PDF."""
     with open(input_path, "r", encoding="utf-8", errors="replace") as f:
         content = f.read()
-    
+
     doc = fitz.open()
     lines = content.splitlines()
     lines_per_page = 45
@@ -642,15 +642,15 @@ def convert_to_pdf(input_file: str, output_pdf_path: str) -> str:
     Returns the absolute path to the output PDF.
     """
     ext = Path(input_file).suffix.lower()
-    
+
     # Ensure output directory exists
     os.makedirs(os.path.dirname(os.path.abspath(output_pdf_path)), exist_ok=True)
-    
+
     # 1. Native PDF
     if ext == ".pdf":
         shutil.copyfile(input_file, output_pdf_path)
         return output_pdf_path
-        
+
     # 2. Apple Pages (.pages)
     if ext == ".pages":
         success = convert_pages_to_pdf(input_file, output_pdf_path)
@@ -660,7 +660,7 @@ def convert_to_pdf(input_file: str, output_pdf_path: str) -> str:
             "Apple Pages document could not be converted: QuickLook preview not found. "
             "Please export as PDF from Pages on your Mac/iPad."
         )
-        
+
     # 3. Images
     if ext in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif", ".gif"):
         if convert_image_to_pdf(input_file, output_pdf_path):
@@ -706,7 +706,7 @@ def convert_to_pdf(input_file: str, output_pdf_path: str) -> str:
     if ext in (".docx", ".doc"):
         if convert_docx_fallback(input_file, output_pdf_path):
             return output_pdf_path
-            
+
     if ext in (".pptx", ".ppt"):
         if convert_pptx_fallback(input_file, output_pdf_path):
             return output_pdf_path

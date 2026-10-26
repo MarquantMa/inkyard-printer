@@ -210,7 +210,7 @@ class TestConverter(unittest.TestCase):
                 pdf_bytes = d.tobytes()
                 d.close()
                 zf.writestr(f"QuickLook/Attachment{i}.pdf", pdf_bytes)
-            
+
             html = '<html><body><img src="Attachment1.pdf"><img src="Attachment2.pdf"><img src="Attachment3.pdf"></body></html>'
             zf.writestr("QuickLook/Preview.html", html)
 

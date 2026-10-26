@@ -66,7 +66,7 @@ def ensure_telemetry_setup():
         with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(CSV_HEADERS)
-            
+
     if not ADS_FILE.exists():
         with open(ADS_FILE, "w", encoding="utf-8") as f:
             json.dump(DEFAULT_ADS, f, indent=2, ensure_ascii=False)
@@ -86,9 +86,9 @@ def log_print_job(
 ) -> dict:
     """Append a print job record to print_log.csv."""
     ensure_telemetry_setup()
-    
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     # Calculate paper sheets: duplex cuts sheets in half (ceil(pages / 2))
     if duplex:
         sheets_used = (printed_pages + 1) // 2
@@ -112,11 +112,11 @@ def log_print_job(
         round(est_ink_saved_ml, 3),
         status
     ]
-    
+
     with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(record)
-        
+
     return {
         "timestamp": timestamp,
         "sheets_used": sheets_used,
@@ -130,7 +130,7 @@ def get_telemetry_stats() -> dict:
     Read print_log.csv and aggregate total impact metrics.
     """
     ensure_telemetry_setup()
-    
+
     total_jobs = 0
     total_printed_pages = 0
     total_sheets_used = 0
@@ -147,18 +147,18 @@ def get_telemetry_stats() -> dict:
                     total_jobs += 1
                     pp = int(row.get("Printed_Pages", 1))
                     total_printed_pages += pp
-                    
+
                     duplex_used = row.get("Duplex_Used", "True") == "True"
                     if duplex_used:
                         duplex_count += 1
-                        
+
                     sheets_saved = int(row.get("Paper_Sheets_Saved", 0))
                     total_sheets_saved += sheets_saved
                     total_sheets_used += int(row.get("Paper_Sheets_Used", pp))
-                    
+
                     ink_ml = float(row.get("Est_Ink_Saved_mL", 0.0))
                     total_ink_saved_ml += ink_ml
-                    
+
                     m = row.get("Ink_Mode_Selected", "eco")
                     mode_counts[m] = mode_counts.get(m, 0) + 1
                 except Exception:

@@ -536,7 +536,7 @@ def parse_page_range(range_str: str, max_pages: int) -> list:
     """
     if not range_str or range_str.strip().lower() in ("all", "*", ""):
         return list(range(max_pages))
-    
+
     pages = set()
     parts = range_str.replace(" ", "").split(",")
     for part in parts:
@@ -558,7 +558,7 @@ def parse_page_range(range_str: str, max_pages: int) -> list:
                     pages.add(p - 1)
             except ValueError:
                 continue
-                
+
     result = sorted(list(pages))
     return result if result else list(range(max_pages))
 

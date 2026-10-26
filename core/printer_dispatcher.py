@@ -26,7 +26,7 @@ def check_printer_connectivity(ip: str = "172.16.4.9", timeout: float = 1.2) -> 
     results = {}
     is_online = False
     t_start = time.time()
-    
+
     for port in ports:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(timeout)
@@ -38,9 +38,9 @@ def check_printer_connectivity(ip: str = "172.16.4.9", timeout: float = 1.2) -> 
             results[str(port)] = False
         finally:
             s.close()
-            
+
     latency_ms = round((time.time() - t_start) * 1000, 1)
-    
+
     return {
         "online": is_online,
         "ip": ip,
@@ -70,7 +70,7 @@ def build_pjl_payload(
     # Allow letters, numbers, spaces, hyphens, underscores, and unicode characters
     clean_student = " ".join((student_name or "Student").split()).strip()
     clean_job = " ".join((job_name or "Document.pdf").split()).strip()
-    
+
     pjl_header = (
         f"\x1b%-12345X@PJL\r\n"
         f'@PJL SET USERNAME = "{clean_student}"\r\n'
@@ -84,9 +84,9 @@ def build_pjl_payload(
         f"@PJL SET HOLDTYPE = HOLD\r\n"
         f"@PJL ENTER LANGUAGE = PDF\r\n"
     ).encode("utf-8")
-    
+
     pjl_footer = b"\r\n\x1b%-12345X@PJL EOJ\r\n\x1b%-12345X"
-    
+
     return pjl_header + pdf_bytes + pjl_footer
 
 
@@ -112,10 +112,10 @@ def send_via_lpd(
     clean_job = " ".join((job_name or "Document.pdf").split()).strip()
     hostname = "localhost"
     job_id = "001"
-    
+
     # Wrap in PJL to guarantee duplex, binding, collate, and secure print tags
     payload = build_pjl_payload(pdf_bytes, student_name, job_name, duplex, copies, binding=binding, collate=collate)
-    
+
     # Build LPD control file content (RFC 1179: 'l' for binary raw print stream)
     cf_lines = [
         f"H{hostname}",
@@ -128,13 +128,13 @@ def send_via_lpd(
         f"UdfA{job_id}{hostname}",
     ]
     cf_data = ("\n".join(cf_lines) + "\n").encode("utf-8")
-    
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(timeout)
-    
+
     try:
         s.connect((ip, 515))
-        
+
         # 1. Receive-a-printer-job command: \x02<queue>\n
         s.sendall(f"\x02{queue}\n".encode("ascii"))
         ack = s.recv(1)
@@ -148,33 +148,33 @@ def send_via_lpd(
             ack = s.recv(1)
             if ack != b"\x00":
                 raise RuntimeError(f"LPD queue rejected by printer: ack={ack!r}")
-                
+
         # 2. Receive control file command: \x02<count> cfA<id><host>\n
         cf_cmd = f"\x02{len(cf_data)} cfA{job_id}{hostname}\n".encode("ascii")
         s.sendall(cf_cmd)
         ack = s.recv(1)
         if ack != b"\x00":
             raise RuntimeError(f"LPD control file cmd rejected: ack={ack!r}")
-            
+
         # Send control file bytes + 0x00
         s.sendall(cf_data + b"\x00")
         ack = s.recv(1)
         if ack != b"\x00":
             raise RuntimeError(f"LPD control file data rejected: ack={ack!r}")
-            
+
         # 3. Receive data file command: \x03<count> dfA<id><host>\n
         df_cmd = f"\x03{len(payload)} dfA{job_id}{hostname}\n".encode("ascii")
         s.sendall(df_cmd)
         ack = s.recv(1)
         if ack != b"\x00":
             raise RuntimeError(f"LPD data file cmd rejected: ack={ack!r}")
-            
+
         # Send data file bytes + 0x00
         s.sendall(payload + b"\x00")
         ack = s.recv(1)
         if ack != b"\x00":
             raise RuntimeError(f"LPD data transfer rejected: ack={ack!r}")
-            
+
         return {
             "success": True,
             "protocol": "LPD (RFC 1179)",
@@ -201,7 +201,7 @@ def send_via_raw_socket(
     Send job via RAW JetDirect socket (Port 9100) with PJL header.
     """
     payload = build_pjl_payload(pdf_bytes, student_name, job_name, duplex, copies, binding=binding, collate=collate)
-    
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(timeout)
     try:
@@ -253,7 +253,7 @@ def send_via_cups_cli(
                     break
         except Exception:
             pass
-            
+
     if not duplex:
         sides_val = "one-sided"
     elif str(binding).lower() == "short":
@@ -272,7 +272,7 @@ def send_via_cups_cli(
         "-o", f"Collate={'True' if collate else 'False'}",
         pdf_path
     ])
-    
+
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
     if proc.returncode == 0:
         return {
@@ -300,10 +300,10 @@ def build_ipp_print_request(
     """
     # IPP Header: version 2.0 (0x02, 0x00), operation Print-Job (0x0002), request-id (1)
     header = struct.pack(">BBHI", 2, 0, 0x0002, 1)
-    
+
     # Operation attributes tag = 0x01
     body = b"\x01"
-    
+
     def add_attr(tag, name, value):
         res = struct.pack(">B", tag)
         res += struct.pack(">H", len(name)) + name.encode("utf-8")
@@ -330,7 +330,7 @@ def build_ipp_print_request(
     body += add_attr(0x42, "job-name", job_name)
     # document-format (0x49)
     body += add_attr(0x49, "document-format", "application/pdf")
-    
+
     if not duplex:
         sides_val = "one-sided"
     elif str(binding).lower() == "short":
@@ -341,10 +341,10 @@ def build_ipp_print_request(
     body += add_attr(0x21, "copies", copies)
     handling = "separate-documents-collated-copies" if collate else "separate-documents-uncollated-copies"
     body += add_attr(0x44, "multiple-document-handling", handling)
-    
+
     # End-of-attributes tag = 0x03
     body += b"\x03"
-    
+
     return header + body + pdf_bytes
 
 
@@ -364,7 +364,7 @@ def send_via_ipp(
     """
     req_data = build_ipp_print_request(pdf_bytes, student_name, job_name, duplex, copies, ip, binding=binding, collate=collate)
     url = f"http://{ip}:631/ipp/print"
-    
+
     req = urllib.request.Request(
         url,
         data=req_data,
@@ -407,7 +407,7 @@ def dispatch_print_job(
         pdf_bytes = f.read()
 
     errors = []
-    
+
     # Explicit protocols
     if preferred_protocol == "mock":
         return {

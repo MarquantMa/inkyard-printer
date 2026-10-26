@@ -1,4 +1,4 @@
-# InkYard Autonomous Campus Print & InkSaver Suite 🖨️🌱
+# InkYard Autonomous Campus Print & InkSaver Suite
 > **Self-Service Campus Printing Network Processing 35,000+ Pages/Month with Bayer 8×8 Spatial Halftoning & Connected-Component Stroke Protection**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

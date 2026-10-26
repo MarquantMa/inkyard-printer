@@ -1,10 +1,10 @@
-# 🚀 InkYard — Cross-Platform Deployment Guide
+#  InkYard — Cross-Platform Deployment Guide
 
 A unified, zero-install, zero-cost eco-print web portal for schools and campuses.
 
 ---
 
-## 🌟 The Philosophy: Why a Web Portal Beats an App
+##  The Philosophy: Why a Web Portal Beats an App
 
 | Factor | Native App (App Store) | Local Web Print Portal (This Project) |
 |---|---|---|
@@ -16,7 +16,7 @@ A unified, zero-install, zero-cost eco-print web portal for schools and campuses
 
 ---
 
-## 🖥️ Architecture Overview
+##  Architecture Overview
 
 ```
  [iPadOS / macOS / Windows / Android]  (Students on school Wi-Fi)
@@ -57,8 +57,8 @@ A unified, zero-install, zero-cost eco-print web portal for schools and campuses
    *该脚本会自动调用 `caffeinate -dimsu` 全面防止系统与显示屏休眠，保持服务全天在线。*
 2. 启动后终端会打印出当前 Wi-Fi 的局域网地址，例如：
    ```
-   ➜ Localhost:  http://localhost:5050
-   ➜ School/LAN: http://172.21.8.174:5050
+    Localhost:  http://localhost:5050
+    School/LAN: http://172.21.8.174:5050
    ```
 3. **换另一台电脑、iPad 或手机进行测试：**
    - 确保那台设备与你的 Mac 连接在**同一个 Wi-Fi**（校园网或热点）。
@@ -66,7 +66,7 @@ A unified, zero-install, zero-cost eco-print web portal for schools and campuses
      ```
      http://<YOUR_MAC_IP>:5050
      ```
-     （或者直接在 Mac 屏幕上点击右上角“📱 Connect iPad / QR”扫码打开）。
+     （或者直接在 Mac 屏幕上点击右上角“ Connect iPad / QR”扫码打开）。
    - 无需在那台电脑上安装任何驱动、软件或 Python，直接拖入 PDF、Office 或图片即可实时预览与打印！
 4. **Mac 测试一整天的注意事项：**
    - 建议连接电源适配器（充电器）。
@@ -124,8 +124,8 @@ To make InkYard survive computer restarts without human intervention:
 
 #### Step 5: Put Up the QR Code Poster for Students
 1. Open `http://localhost:5050` (or `http://localhost:5000`) on the classroom PC.
-2. Click **📱 Connect iPad / QR** in the top navigation bar.
-3. Click **🖨️ Print QR Poster for Canon**.
+2. Click ** Connect iPad / QR** in the top navigation bar.
+3. Click ** Print QR Poster for Canon**.
 4. Tape the printed page right above the physical Canon printer touchscreen!
 5. Any student with an iPad, iPhone, Mac, or Windows laptop points their camera at the QR code, opens InkYard instantly, and prints without installing drivers!
 

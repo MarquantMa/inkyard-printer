@@ -8,7 +8,7 @@ set -e
 cd "$(dirname "$0")"
 
 echo "================================================================="
-echo "  🌱 Starting InkYard Portal (macOS Local Host)"
+echo "   Starting InkYard Portal (macOS Local Host)"
 echo "================================================================="
 
 # Find local IP
@@ -22,9 +22,9 @@ else
 fi
 export PORT
 
-echo "  ➜ Localhost:  http://localhost:${PORT}"
-echo "  ➜ School/LAN: http://${LOCAL_IP}:${PORT}"
-echo "  ➜ Printer:    Canon Multifunction @ 172.16.4.9"
+echo "   Localhost:  http://localhost:${PORT}"
+echo "   School/LAN: http://${LOCAL_IP}:${PORT}"
+echo "   Printer:    Canon Multifunction @ 172.16.4.9"
 echo "-----------------------------------------------------------------"
 echo "  Students on iPad, Mac, and Windows can open: http://${LOCAL_IP}:${PORT}"
 echo "================================================================="
@@ -33,7 +33,7 @@ echo "================================================================="
 (sleep 1.2 && open "http://localhost:${PORT}") &
 
 # Run server with caffeinate to prevent macOS from sleeping when idle or running on battery/AC
-echo "  ⚡ Caffeinate active: Mac will stay awake while server is running."
+echo "   Caffeinate active: Mac will stay awake while server is running."
 echo "================================================================="
 if command -v caffeinate >/dev/null 2>&1; then
     exec caffeinate -dimsu python3 server.py
